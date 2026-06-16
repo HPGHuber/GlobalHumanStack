@@ -187,9 +187,19 @@ export function App(): JSX.Element {
 
   return (
     <div className="page">
-      <header>
-        <h1>AYA.ONE — Identity Stack</h1>
-        <p className="tagline">All is Sacred. All is Unique. All is Connected.</p>
+      <header className="hero">
+        <div className="brand">
+          <span className="ball" aria-hidden>⚽</span>
+          <h1>
+            FIFA<span className="dot">.one</span>
+          </h1>
+        </div>
+        <p className="tagline">Standing behind the beautiful game. As one.</p>
+        <p className="hero-sub">
+          A transparent, decentralized and global community uniting humanity — sustainable
+          open-source technology for all <strong>Fans</strong>, <strong>Players</strong> and{" "}
+          <strong>Clubs</strong>.
+        </p>
         {config && (
           <div className="modes">
             <Mode label="IOTA Identity" value={config.mode.iota} />
@@ -488,6 +498,14 @@ export function App(): JSX.Element {
           <pre>{JSON.stringify(presentation.disclosed, null, 2)}</pre>
         </section>
       )}
+
+      <footer className="site-footer">
+        <span className="ball" aria-hidden>⚽</span>
+        <span>
+          <strong>FIFA.one</strong> — uniting humanity behind the beautiful game · open source ·
+          GPLv3
+        </span>
+      </footer>
     </div>
   );
 }
