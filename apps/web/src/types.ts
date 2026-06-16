@@ -43,6 +43,18 @@ export interface FanClaims {
   tier?: string;
 }
 
+export interface PlayerOfTheMatchAward {
+  title: string;
+  matchId: string;
+  match: string;
+  competition: string;
+  playerName: string;
+  team: string;
+  votes: number;
+  totalVotes: number;
+  awardedAt: string;
+}
+
 export interface LivingBeingSubject {
   id: string;
   kingdom: Kingdom;
@@ -51,7 +63,34 @@ export interface LivingBeingSubject {
   guardian?: string;
   connectedTo?: Connection[];
   fan?: FanClaims;
+  award?: PlayerOfTheMatchAward;
   attributes?: Record<string, string | number | boolean>;
+}
+
+export interface MatchPlayer {
+  id: string;
+  name: string;
+  team: string;
+  position?: string;
+}
+
+export interface PlayerTally extends MatchPlayer {
+  votes: number;
+}
+
+export interface MatchView {
+  id: string;
+  competition: string;
+  homeTeam: string;
+  awayTeam: string;
+  label: string;
+  kickoff: string;
+  status: "scheduled" | "voting_open" | "voting_closed";
+  roster: MatchPlayer[];
+  totalVotes: number;
+  results: PlayerTally[];
+  winnerPlayerId?: string;
+  awardedCredentialId?: string;
 }
 
 export interface BeingRecord {

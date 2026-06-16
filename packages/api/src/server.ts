@@ -37,6 +37,11 @@ interface PresentBody {
   disclose?: Array<keyof LivingBeingSubject>;
 }
 
+interface VoteBody {
+  worldPassCredentialId?: string;
+  playerId?: string;
+}
+
 const asyncHandler =
   (fn: (req: Request, res: Response) => Promise<void>) =>
   (req: Request, res: Response, next: NextFunction): void => {
@@ -158,6 +163,49 @@ async function main(): Promise<void> {
   api.get("/registry", (_req, res) => {
     res.json(stack.registry());
   });
+
+  api.get(
+    "/matches",
+    asyncHandler(async (_req, res) => {
+      res.json(await stack.listMatches());
+    })
+  );
+
+  api.get(
+    "/matches/:id/tally",
+    asyncHandler(async (req, res) => {
+      res.json(await stack.getMatch(req.params.id));
+    })
+  );
+
+  api.post(
+    "/matches/:id/vote",
+    asyncHandler(async (req, res) => {
+      const body = req.body as VoteBody;
+      if (!body.worldPassCredentialId) {
+        res.status(400).json({ error: "worldPassCredentialId is required" });
+        return;
+      }
+      if (!body.playerId) {
+        res.status(400).json({ error: "playerId is required" });
+        return;
+      }
+      res.json(
+        await stack.castVote({
+          worldPassCredentialId: body.worldPassCredentialId,
+          matchId: req.params.id,
+          playerId: body.playerId
+        })
+      );
+    })
+  );
+
+  api.post(
+    "/matches/:id/award",
+    asyncHandler(async (req, res) => {
+      res.json(await stack.awardPlayerOfTheMatch(req.params.id));
+    })
+  );
 
   app.use("/api", api);
 

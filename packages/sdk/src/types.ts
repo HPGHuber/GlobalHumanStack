@@ -50,6 +50,25 @@ export interface FanClaims {
   tier?: string;
 }
 
+/**
+ * A "Player of the Match" honour, voted for by unique WorldPass-holding fans
+ * after a game. Issued to the winning player's DID as its own credential type —
+ * a portable, verifiable award the player owns.
+ */
+export interface PlayerOfTheMatchAward {
+  title: string;
+  matchId: string;
+  /** Human-readable fixture, e.g. "Argentina vs France". */
+  match: string;
+  competition: string;
+  playerName: string;
+  team: string;
+  /** Votes the winner received, and total votes cast in the match. */
+  votes: number;
+  totalVotes: number;
+  awardedAt: string;
+}
+
 /** The `credentialSubject` of a Living Being Credential. */
 export interface LivingBeingSubject {
   id: string;
@@ -61,6 +80,8 @@ export interface LivingBeingSubject {
   connectedTo?: Connection[];
   /** Present when the human also holds a FIFA Collect WorldPass. */
   fan?: FanClaims;
+  /** Present on a Player-of-the-Match award credential. */
+  award?: PlayerOfTheMatchAward;
   /** Free-form, low-sensitivity attributes (selectively disclosable). */
   attributes?: Record<string, string | number | boolean>;
 }

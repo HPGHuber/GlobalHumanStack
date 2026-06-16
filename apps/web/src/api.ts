@@ -2,6 +2,7 @@ import type {
   AppConfig,
   BeingRecord,
   Kingdom,
+  MatchView,
   OnboardResult,
   Presentation,
   Taxon,
@@ -43,5 +44,9 @@ export const api = {
   present: (credentialId: string, disclose: string[]) =>
     request<Presentation>("/api/present", { credentialId, disclose }),
   verify: (jwt: string) => request<VerificationResult>("/api/verify", { jwt }),
-  revoke: (credentialId: string) => request<{ ok: boolean }>("/api/revoke", { credentialId })
+  revoke: (credentialId: string) => request<{ ok: boolean }>("/api/revoke", { credentialId }),
+  listMatches: () => request<MatchView[]>("/api/matches"),
+  vote: (matchId: string, worldPassCredentialId: string, playerId: string) =>
+    request<MatchView>(`/api/matches/${matchId}/vote`, { worldPassCredentialId, playerId }),
+  award: (matchId: string) => request<OnboardResult>(`/api/matches/${matchId}/award`, {})
 };

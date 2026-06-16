@@ -13,7 +13,9 @@ import { NullifierStore, verifyWorldId } from "./worldid/verifier.js";
 import {
   LiveFifaCollectAdapter,
   MockFifaCollectAdapter,
-  type FifaCollectAdapter
+  type FifaCollectAdapter,
+  type MatchFixture,
+  type MatchPlayer
 } from "./fifa/collect.js";
 import type {
   DidKeyPair,
@@ -74,12 +76,51 @@ export interface OnboardResult {
   credential: IssuedCredential;
 }
 
+export interface CastVoteInput {
+  /** The voter's WorldPass credential id — voting is gated to WorldPass holders. */
+  worldPassCredentialId: string;
+  matchId: string;
+  /** Roster player id the fan is voting for. */
+  playerId: string;
+}
+
+export interface PlayerTally extends MatchPlayer {
+  votes: number;
+}
+
+/** A read-only view of a match plus its live Player-of-the-Match tally. */
+export interface MatchView {
+  id: string;
+  competition: string;
+  homeTeam: string;
+  awayTeam: string;
+  label: string;
+  kickoff: string;
+  status: MatchFixture["status"];
+  roster: MatchPlayer[];
+  totalVotes: number;
+  results: PlayerTally[];
+  winnerPlayerId?: string;
+  awardedCredentialId?: string;
+}
+
+interface MatchState {
+  fixture: MatchFixture;
+  status: MatchFixture["status"];
+  votes: Map<string, number>;
+  voters: Set<string>;
+  winnerPlayerId?: string;
+  awardedCredentialId?: string;
+}
+
 /** The AYA Identity Orchestrator — wires DID, credential, status and World ID. */
 export class IdentityStack {
   private readonly beings = new Map<string, BeingRecord>();
   private readonly credentials = new Map<string, IssuedCredential>();
   private readonly nullifiers = new NullifierStore();
   private readonly trustedIssuers = new Set<string>();
+  /** Lazily loaded from the FIFA Collect adapter on first access. */
+  private matches: Map<string, MatchState> | null = null;
 
   private constructor(
     readonly config: StackConfig,
@@ -206,6 +247,146 @@ export class IdentityStack {
     return this.issueFor(subject, ["WorldPassCredential"]);
   }
 
+  /** Lists fixtures + live Player-of-the-Match tallies for the competition. */
+  async listMatches(): Promise<MatchView[]> {
+    const matches = await this.ensureMatches();
+    return [...matches.values()].map((m) => this.viewOf(m));
+  }
+
+  /** Returns a single match view, or throws if the id is unknown. */
+  async getMatch(matchId: string): Promise<MatchView> {
+    const matches = await this.ensureMatches();
+    const match = matches.get(matchId);
+    if (!match) throw new Error(`Unknown match: ${matchId}`);
+    return this.viewOf(match);
+  }
+
+  /**
+   * Casts a Player-of-the-Match vote. Gated to WorldPass holders: the voter must
+   * present a valid, unrevoked WorldPass for this match's competition. Enforces
+   * one fan = one vote per match (dedup key `${worldPassId}:${matchId}`).
+   */
+  async castVote(input: CastVoteInput): Promise<MatchView> {
+    const matches = await this.ensureMatches();
+    const match = matches.get(input.matchId);
+    if (!match) throw new Error(`Unknown match: ${input.matchId}`);
+    if (match.status !== "voting_open") {
+      throw new Error("Voting is not open for this match");
+    }
+
+    const pass = this.credentials.get(input.worldPassCredentialId);
+    if (!pass || !pass.payload.type.includes("WorldPassCredential")) {
+      throw new Error("A valid WorldPass is required to vote (claim one first)");
+    }
+    if (this.status.isRevoked(pass.payload.credentialStatus.statusListIndex)) {
+      throw new Error("This WorldPass has been revoked");
+    }
+    const fan = pass.payload.credentialSubject.fan;
+    if (!fan) throw new Error("WorldPass is missing fan claims");
+    if (fan.competition && fan.competition !== match.fixture.competition) {
+      throw new Error(
+        `This WorldPass is for ${fan.competition}, not ${match.fixture.competition}`
+      );
+    }
+
+    const player = match.fixture.roster.find((p) => p.id === input.playerId);
+    if (!player) throw new Error(`Unknown player for this match: ${input.playerId}`);
+
+    const voteKey = `${fan.worldPassId}:${match.fixture.id}`;
+    if (match.voters.has(voteKey)) {
+      throw new Error("This WorldPass has already voted for this match");
+    }
+    match.voters.add(voteKey);
+    match.votes.set(input.playerId, (match.votes.get(input.playerId) ?? 0) + 1);
+
+    return this.viewOf(match);
+  }
+
+  /**
+   * Closes voting and issues a `PlayerOfTheMatchCredential` to the winner's DID —
+   * a verifiable award the player owns. The winner is the roster player with the
+   * most votes (first by roster order on a tie).
+   */
+  async awardPlayerOfTheMatch(matchId: string): Promise<OnboardResult> {
+    const matches = await this.ensureMatches();
+    const match = matches.get(matchId);
+    if (!match) throw new Error(`Unknown match: ${matchId}`);
+    if (match.awardedCredentialId) {
+      throw new Error("Player of the Match has already been awarded for this match");
+    }
+    const results = this.tallyOf(match);
+    const totalVotes = results.reduce((sum, r) => sum + r.votes, 0);
+    if (totalVotes === 0) {
+      throw new Error("No votes have been cast for this match yet");
+    }
+    const winner = results.reduce((best, r) => (r.votes > best.votes ? r : best), results[0]);
+
+    const network = this.config.iota.network ?? "local";
+    const playerDid = `did:iota:${network}:0x${sha256Hex(
+      `player:${match.fixture.competition}:${winner.id}`
+    )}`;
+    const subject: LivingBeingSubject = {
+      id: playerDid,
+      kingdom: "human",
+      connectedTo: [{ rel: "memberOf", id: `did:aya:team:${slug(winner.team)}` }],
+      award: {
+        title: "Player of the Match",
+        matchId: match.fixture.id,
+        match: `${match.fixture.homeTeam} vs ${match.fixture.awayTeam}`,
+        competition: match.fixture.competition,
+        playerName: winner.name,
+        team: winner.team,
+        votes: winner.votes,
+        totalVotes,
+        awardedAt: new Date().toISOString()
+      },
+      attributes: { name: winner.name, team: winner.team }
+    };
+    const result = await this.issueFor(subject, ["PlayerOfTheMatchCredential"]);
+
+    match.status = "voting_closed";
+    match.winnerPlayerId = winner.id;
+    match.awardedCredentialId = result.credential.id;
+    return result;
+  }
+
+  private async ensureMatches(): Promise<Map<string, MatchState>> {
+    if (!this.matches) {
+      const fixtures = await this.fifa.listMatches(this.config.fifa.competition);
+      this.matches = new Map(
+        fixtures.map((fixture) => [
+          fixture.id,
+          { fixture, status: fixture.status, votes: new Map(), voters: new Set() }
+        ])
+      );
+    }
+    return this.matches;
+  }
+
+  private tallyOf(match: MatchState): PlayerTally[] {
+    return match.fixture.roster
+      .map((p) => ({ ...p, votes: match.votes.get(p.id) ?? 0 }))
+      .sort((a, b) => b.votes - a.votes);
+  }
+
+  private viewOf(match: MatchState): MatchView {
+    const results = this.tallyOf(match);
+    return {
+      id: match.fixture.id,
+      competition: match.fixture.competition,
+      homeTeam: match.fixture.homeTeam,
+      awayTeam: match.fixture.awayTeam,
+      label: `${match.fixture.homeTeam} vs ${match.fixture.awayTeam}`,
+      kickoff: match.fixture.kickoff,
+      status: match.status,
+      roster: match.fixture.roster,
+      totalVotes: results.reduce((sum, r) => sum + r.votes, 0),
+      results,
+      winnerPlayerId: match.winnerPlayerId,
+      awardedCredentialId: match.awardedCredentialId
+    };
+  }
+
   /** Produces a presentation disclosing only the requested subject fields. */
   present(credentialId: string, disclose: Array<keyof LivingBeingSubject>): Presentation {
     const credential = this.credentials.get(credentialId);
@@ -283,6 +464,13 @@ export class IdentityStack {
     this.beings.set(subject.id, record);
     return { record, credential };
   }
+}
+
+function slug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function pruneAttributes(

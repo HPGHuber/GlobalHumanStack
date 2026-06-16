@@ -262,3 +262,89 @@ pre {
   overflow: auto;
   font-size: 13px;
 }
+
+.card.pom {
+  background: linear-gradient(135deg, #112147 0%, var(--panel) 70%);
+  border-color: var(--accent);
+}
+
+.pom .empty {
+  color: var(--muted);
+  margin: 6px 0;
+}
+
+.pom-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 620px) {
+  .pom-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roster {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roster li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.roster li.winner {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roster-row button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.roster-row .player {
+  flex: 1;
+}
+
+.roster-row .vote-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.bar {
+  margin-top: 8px;
+  height: 6px;
+  border-radius: 999px;
+  background: #0a0f1f;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width 0.3s ease;
+}
+
+.pom-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}

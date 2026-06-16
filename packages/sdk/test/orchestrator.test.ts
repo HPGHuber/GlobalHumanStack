@@ -154,4 +154,124 @@ describe("AYA Identity Stack", () => {
     const result = await stack.verify(credential.jwt);
     expect(result.valid).toBe(false);
   });
+
+  describe("Player of the Match voting", () => {
+    const MATCH = "M-ARG-FRA";
+
+    async function claimWorldPass(
+      handle: string,
+      opts: { favoriteTeam?: string; competition?: string } = {}
+    ): Promise<string> {
+      const { credential } = await stack.onboardFan({
+        worldId: { simulate: true, signal: `worldpass:${handle}` },
+        fan: { handle, favoriteTeam: opts.favoriteTeam },
+        competition: opts.competition
+      });
+      return credential.id;
+    }
+
+    it("lists mock fixtures with rosters and zero votes", async () => {
+      const matches = await stack.listMatches();
+      expect(matches.length).toBeGreaterThan(0);
+      const match = matches.find((m) => m.id === MATCH);
+      expect(match?.status).toBe("voting_open");
+      expect(match?.roster.length).toBeGreaterThan(0);
+      expect(match?.totalVotes).toBe(0);
+    });
+
+    it("lets a WorldPass holder cast one vote that is tallied", async () => {
+      const pass = await claimWorldPass("fan_a");
+      const view = await stack.castVote({
+        worldPassCredentialId: pass,
+        matchId: MATCH,
+        playerId: "messi"
+      });
+      expect(view.totalVotes).toBe(1);
+      expect(view.results.find((r) => r.id === "messi")?.votes).toBe(1);
+    });
+
+    it("rejects voting without a valid WorldPass", async () => {
+      const { credential } = await stack.onboardHuman({
+        worldId: { simulate: true, signal: "not_a_fan" }
+      });
+      await expect(
+        stack.castVote({ worldPassCredentialId: credential.id, matchId: MATCH, playerId: "messi" })
+      ).rejects.toThrow(/valid WorldPass is required/);
+      await expect(
+        stack.castVote({ worldPassCredentialId: "nope", matchId: MATCH, playerId: "messi" })
+      ).rejects.toThrow(/valid WorldPass is required/);
+    });
+
+    it("rejects a WorldPass issued for a different competition", async () => {
+      const pass = await claimWorldPass("euro_fan", { competition: "UEFA Euro 2028" });
+      await expect(
+        stack.castVote({ worldPassCredentialId: pass, matchId: MATCH, playerId: "messi" })
+      ).rejects.toThrow(/is for UEFA Euro 2028/);
+    });
+
+    it("rejects voting with a revoked WorldPass", async () => {
+      const { credential } = await stack.onboardFan({
+        worldId: { simulate: true, signal: "worldpass:revoked_fan" },
+        fan: { handle: "revoked_fan" }
+      });
+      stack.revoke(credential.id);
+      await expect(
+        stack.castVote({ worldPassCredentialId: credential.id, matchId: MATCH, playerId: "messi" })
+      ).rejects.toThrow(/revoked/);
+    });
+
+    it("enforces one vote per WorldPass per match but allows voting in another match", async () => {
+      const pass = await claimWorldPass("fan_b");
+      await stack.castVote({ worldPassCredentialId: pass, matchId: MATCH, playerId: "messi" });
+      await expect(
+        stack.castVote({ worldPassCredentialId: pass, matchId: MATCH, playerId: "mbappe" })
+      ).rejects.toThrow(/already voted/);
+      // Same fan, different match → allowed.
+      const other = await stack.castVote({
+        worldPassCredentialId: pass,
+        matchId: "M-BRA-GER",
+        playerId: "vinicius"
+      });
+      expect(other.totalVotes).toBe(1);
+    });
+
+    it("rejects voting for a player not on the match roster", async () => {
+      const pass = await claimWorldPass("fan_c");
+      await expect(
+        stack.castVote({ worldPassCredentialId: pass, matchId: MATCH, playerId: "ronaldo" })
+      ).rejects.toThrow(/Unknown player/);
+    });
+
+    it("awards a verifiable PlayerOfTheMatchCredential to the winner and closes voting", async () => {
+      const a = await claimWorldPass("voter_1");
+      const b = await claimWorldPass("voter_2");
+      const c = await claimWorldPass("voter_3");
+      await stack.castVote({ worldPassCredentialId: a, matchId: MATCH, playerId: "messi" });
+      await stack.castVote({ worldPassCredentialId: b, matchId: MATCH, playerId: "messi" });
+      await stack.castVote({ worldPassCredentialId: c, matchId: MATCH, playerId: "mbappe" });
+
+      const { credential } = await stack.awardPlayerOfTheMatch(MATCH);
+      expect(credential.payload.type).toContain("PlayerOfTheMatchCredential");
+      const award = credential.payload.credentialSubject.award;
+      expect(award?.playerName).toBe("Lionel Messi");
+      expect(award?.votes).toBe(2);
+      expect(award?.totalVotes).toBe(3);
+      expect((await stack.verify(credential.jwt)).valid).toBe(true);
+
+      const view = await stack.getMatch(MATCH);
+      expect(view.status).toBe("voting_closed");
+      expect(view.winnerPlayerId).toBe("messi");
+
+      // Voting is closed and cannot be re-awarded.
+      const late = await claimWorldPass("late_voter");
+      await expect(
+        stack.castVote({ worldPassCredentialId: late, matchId: MATCH, playerId: "messi" })
+      ).rejects.toThrow(/not open/);
+      await expect(stack.awardPlayerOfTheMatch(MATCH)).rejects.toThrow(/already been awarded/);
+    });
+
+    it("rejects awarding a match with no votes", async () => {
+      await expect(stack.awardPlayerOfTheMatch("M-BRA-GER")).rejects.toThrow(/No votes/);
+    });
+  });
 });

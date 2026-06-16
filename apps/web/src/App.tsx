@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
-import type { AppConfig, BeingRecord, Kingdom, Presentation, VerificationResult } from "./types";
+import type {
+  AppConfig,
+  BeingRecord,
+  Kingdom,
+  MatchView,
+  Presentation,
+  VerificationResult
+} from "./types";
 
 const DISCLOSE_FIELDS = [
   "kingdom",
@@ -9,6 +16,7 @@ const DISCLOSE_FIELDS = [
   "guardian",
   "connectedTo",
   "fan",
+  "award",
   "attributes"
 ] as const;
 
@@ -41,16 +49,33 @@ export function App(): JSX.Element {
   const [fanHandle, setFanHandle] = useState("messi_fan_10");
   const [favoriteTeam, setFavoriteTeam] = useState("Argentina");
 
+  const [matches, setMatches] = useState<MatchView[]>([]);
+  const [selectedMatchId, setSelectedMatchId] = useState("");
+  const [selectedWorldPassId, setSelectedWorldPassId] = useState("");
+
   const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [verification, setVerification] = useState<VerificationResult | null>(null);
   const [disclose, setDisclose] = useState<string[]>(["kingdom", "taxon"]);
 
-  const humans = useMemo(() => registry.filter((r) => r.kingdom === "human"), [registry]);
+  const humans = useMemo(
+    () => registry.filter((r) => r.kingdom === "human" && !r.subject.award),
+    [registry]
+  );
+  const worldPasses = useMemo(() => registry.filter((r) => r.subject.fan), [registry]);
+  const selectedMatch = useMemo(
+    () => matches.find((m) => m.id === selectedMatchId) ?? null,
+    [matches, selectedMatchId]
+  );
 
   const refresh = useCallback(async () => {
-    const [cfg, reg] = await Promise.all([api.getConfig(), api.getRegistry()]);
+    const [cfg, reg, mts] = await Promise.all([
+      api.getConfig(),
+      api.getRegistry(),
+      api.listMatches()
+    ]);
     setConfig(cfg);
     setRegistry(reg);
+    setMatches(mts);
   }, []);
 
   useEffect(() => {
@@ -60,6 +85,16 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (!guardianDid && humans.length > 0) setGuardianDid(humans[0].did);
   }, [humans, guardianDid]);
+
+  useEffect(() => {
+    if (!selectedMatchId && matches.length > 0) setSelectedMatchId(matches[0].id);
+  }, [matches, selectedMatchId]);
+
+  useEffect(() => {
+    if (!selectedWorldPassId && worldPasses.length > 0) {
+      setSelectedWorldPassId(worldPasses[0].credentialId);
+    }
+  }, [worldPasses, selectedWorldPassId]);
 
   const run = useCallback(
     async (fn: () => Promise<void>) => {
@@ -107,6 +142,22 @@ export function App(): JSX.Element {
         worldId: { simulate: true, signal: `worldpass:${fanHandle || Date.now()}` },
         fan: { handle: fanHandle, favoriteTeam, displayName: fanHandle }
       });
+      setJwts((prev) => ({ ...prev, [result.credential.id]: result.credential.jwt }));
+      await refresh();
+    });
+
+  const castVote = (playerId: string) =>
+    run(async () => {
+      if (!selectedMatchId) throw new Error("Select a match to vote in.");
+      if (!selectedWorldPassId) throw new Error("Claim a WorldPass first, then vote.");
+      const updated = await api.vote(selectedMatchId, selectedWorldPassId, playerId);
+      setMatches((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+    });
+
+  const awardPom = () =>
+    run(async () => {
+      if (!selectedMatchId) throw new Error("Select a match to award.");
+      const result = await api.award(selectedMatchId);
       setJwts((prev) => ({ ...prev, [result.credential.id]: result.credential.jwt }));
       await refresh();
     });
@@ -240,6 +291,104 @@ export function App(): JSX.Element {
         </section>
       </div>
 
+      <section className="card pom">
+        <h2>4. Vote — Player of the Match</h2>
+        <p className="hint">
+          One fan, one vote per match — gated to WorldPass holders. Each WorldPass votes once;
+          when voting closes the winner is issued a verifiable <code>PlayerOfTheMatchCredential</code>.
+        </p>
+        {matches.length === 0 ? (
+          <p className="empty">No matches available.</p>
+        ) : (
+          <>
+            <div className="pom-controls">
+              <label>
+                Match
+                <select
+                  value={selectedMatchId}
+                  onChange={(e) => setSelectedMatchId(e.target.value)}
+                >
+                  {matches.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label} · {m.status === "voting_open" ? "voting open" : "voting closed"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Vote as (WorldPass)
+                <select
+                  value={selectedWorldPassId}
+                  onChange={(e) => setSelectedWorldPassId(e.target.value)}
+                >
+                  {worldPasses.length === 0 && (
+                    <option value="">— claim a WorldPass first —</option>
+                  )}
+                  {worldPasses.map((w) => (
+                    <option key={w.credentialId} value={w.credentialId}>
+                      {w.subject.fan?.fifaCollectHandle} · {w.subject.fan?.worldPassId}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {selectedMatch && (
+              <ul className="roster">
+                {selectedMatch.results.map((pl) => {
+                  const pct =
+                    selectedMatch.totalVotes > 0
+                      ? Math.round((pl.votes / selectedMatch.totalVotes) * 100)
+                      : 0;
+                  const isWinner = selectedMatch.winnerPlayerId === pl.id;
+                  return (
+                    <li key={pl.id} className={isWinner ? "winner" : ""}>
+                      <div className="roster-row">
+                        <button
+                          disabled={
+                            busy || !selectedWorldPassId || selectedMatch.status !== "voting_open"
+                          }
+                          onClick={() => castVote(pl.id)}
+                        >
+                          Vote
+                        </button>
+                        <span className="player">
+                          {isWinner ? "🏆 " : ""}
+                          {pl.name}
+                          <span className="subtle">
+                            {" "}· {pl.team}
+                            {pl.position ? ` · ${pl.position}` : ""}
+                          </span>
+                        </span>
+                        <span className="vote-count">{pl.votes}</span>
+                      </div>
+                      <div className="bar">
+                        <div className="bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="pom-footer">
+              <span className="subtle">{selectedMatch?.totalVotes ?? 0} votes cast</span>
+              <button
+                disabled={
+                  busy ||
+                  !selectedMatch ||
+                  selectedMatch.status !== "voting_open" ||
+                  (selectedMatch?.totalVotes ?? 0) === 0
+                }
+                onClick={awardPom}
+              >
+                🏆 Award Player of the Match
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+
       <section className="card">
         <h2>Identity Registry ({registry.length})</h2>
         <table>
@@ -262,10 +411,18 @@ export function App(): JSX.Element {
             {registry.map((r) => (
               <tr key={r.did}>
                 <td>
-                  {r.subject.fan ? "⚽" : KINGDOM_ICON[r.kingdom]}{" "}
-                  {r.subject.fan
-                    ? `WorldPass · ${r.subject.fan.favoriteTeam ?? r.subject.fan.fifaCollectHandle}`
-                    : (r.subject.taxon?.commonName ?? r.kingdom)}
+                  {r.subject.award ? "🏆" : r.subject.fan ? "⚽" : KINGDOM_ICON[r.kingdom]}{" "}
+                  {r.subject.award
+                    ? `${r.subject.award.title} · ${r.subject.award.playerName}`
+                    : r.subject.fan
+                      ? `WorldPass · ${r.subject.fan.favoriteTeam ?? r.subject.fan.fifaCollectHandle}`
+                      : (r.subject.taxon?.commonName ?? r.kingdom)}
+                  {r.subject.award && (
+                    <div className="subtle">
+                      {r.subject.award.match} · {r.subject.award.votes}/{r.subject.award.totalVotes}{" "}
+                      votes
+                    </div>
+                  )}
                   {r.subject.fan && (
                     <div className="subtle">
                       {r.subject.fan.worldPassId}
