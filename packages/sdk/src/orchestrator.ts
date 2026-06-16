@@ -10,6 +10,11 @@ import {
 } from "./credentials/issuer.js";
 import { verifyCredential } from "./credentials/verifier.js";
 import { NullifierStore, verifyWorldId } from "./worldid/verifier.js";
+import {
+  LiveFifaCollectAdapter,
+  MockFifaCollectAdapter,
+  type FifaCollectAdapter
+} from "./fifa/collect.js";
 import type {
   DidKeyPair,
   IssuedCredential,
@@ -47,6 +52,14 @@ export interface OnboardBeingInput {
   attributes?: Record<string, string | number | boolean>;
 }
 
+export interface OnboardFanInput {
+  worldId: WorldIdProof;
+  /** FIFA Collect handle to link, plus optional overrides. */
+  fan: { handle: string; favoriteTeam?: string; displayName?: string };
+  /** Competition the WorldPass is scoped to (defaults to config). */
+  competition?: string;
+}
+
 export interface BeingRecord {
   did: string;
   kingdom: Kingdom;
@@ -73,6 +86,7 @@ export class IdentityStack {
     private readonly did: DidAdapter,
     private readonly status: StatusRegistry,
     private readonly issuer: IssuerAdapter,
+    private readonly fifa: FifaCollectAdapter,
     private readonly issuerKey: DidKeyPair
   ) {
     this.trustedIssuers.add(issuerKey.did);
@@ -85,8 +99,11 @@ export class IdentityStack {
     const issuer: IssuerAdapter = config.waltid.enabled
       ? new WaltIdIssuerAdapter(config.waltid.issuerUrl!)
       : new LocalIssuerAdapter();
+    const fifa: FifaCollectAdapter = config.fifa.enabled
+      ? new LiveFifaCollectAdapter(config.fifa.apiUrl!)
+      : new MockFifaCollectAdapter();
     const issuerKey = await did.create();
-    return new IdentityStack(config, did, new StatusRegistry(), issuer, issuerKey);
+    return new IdentityStack(config, did, new StatusRegistry(), issuer, fifa, issuerKey);
   }
 
   get trustAnchorDid(): string {
@@ -147,6 +164,48 @@ export class IdentityStack {
     return this.issueFor(subject);
   }
 
+  /**
+   * Onboards a football fan: a single flow that proves personhood via World ID,
+   * links a FIFA Collect profile, and issues a WorldPass credential — a
+   * FREEDENTITY for every fan. Enforces one human = one WorldPass per competition.
+   */
+  async onboardFan(input: OnboardFanInput): Promise<OnboardResult> {
+    const competition = input.competition ?? this.config.fifa.competition;
+    const proof: WorldIdProof = {
+      ...input.worldId,
+      signal: input.worldId.signal ?? `worldpass:${input.fan.handle}`
+    };
+    const world = await verifyWorldId(proof, this.config.worldid);
+    if (!world.success) {
+      throw new Error(world.error ?? "World ID verification failed");
+    }
+    const passKey = `${world.nullifier}:${competition}`;
+    if (this.nullifiers.has(passKey)) {
+      throw new Error("This fan already holds a WorldPass for this competition");
+    }
+    this.nullifiers.add(passKey);
+
+    const profile = await this.fifa.getFanProfile(input.fan.handle);
+    const keyPair = await this.did.create();
+    const subject: LivingBeingSubject = {
+      id: keyPair.did,
+      kingdom: "human",
+      uniqueness: { method: "worldid-nullifier", proofRef: `sha256:${sha256Hex(world.nullifier)}` },
+      fan: {
+        fifaCollectHandle: profile.handle,
+        worldPassId: `WP-${sha256Hex(passKey).slice(0, 12).toUpperCase()}`,
+        displayName: input.fan.displayName ?? profile.displayName,
+        favoriteTeam: input.fan.favoriteTeam ?? profile.favoriteTeam,
+        competition,
+        memberSince: profile.memberSince,
+        collectiblesCount: profile.collectiblesCount,
+        tier: profile.tier
+      },
+      attributes: pruneAttributes({ name: input.fan.displayName ?? profile.displayName })
+    };
+    return this.issueFor(subject, ["WorldPassCredential"]);
+  }
+
   /** Produces a presentation disclosing only the requested subject fields. */
   present(credentialId: string, disclose: Array<keyof LivingBeingSubject>): Presentation {
     const credential = this.credentials.get(credentialId);
@@ -190,12 +249,15 @@ export class IdentityStack {
     return this.credentials.get(credentialId);
   }
 
-  private async issueFor(subject: LivingBeingSubject): Promise<OnboardResult> {
+  private async issueFor(
+    subject: LivingBeingSubject,
+    extraTypes: string[] = []
+  ): Promise<OnboardResult> {
     const id = `urn:uuid:${randomUUID()}`;
     const payload: VerifiableCredential = {
       "@context": CONTEXT,
       id,
-      type: ["VerifiableCredential", "LivingBeingCredential"],
+      type: ["VerifiableCredential", "LivingBeingCredential", ...extraTypes],
       issuer: this.issuerKey.did,
       validFrom: new Date().toISOString(),
       credentialStatus: this.status.allocate(),

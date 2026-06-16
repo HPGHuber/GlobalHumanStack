@@ -4,12 +4,14 @@ export interface StackMode {
   iota: Adapter;
   waltid: Adapter;
   worldid: Adapter;
+  fifa: Adapter;
 }
 
 export interface AppConfig {
   mode: StackMode;
   trustAnchorDid: string;
   worldId: { appId?: string; action: string };
+  fifa: { competition: string };
 }
 
 export type Kingdom = "human" | "animalia" | "plantae";
@@ -30,6 +32,17 @@ export interface Connection {
   id: string;
 }
 
+export interface FanClaims {
+  fifaCollectHandle: string;
+  worldPassId: string;
+  displayName?: string;
+  favoriteTeam?: string;
+  competition?: string;
+  memberSince?: string;
+  collectiblesCount?: number;
+  tier?: string;
+}
+
 export interface LivingBeingSubject {
   id: string;
   kingdom: Kingdom;
@@ -37,6 +50,7 @@ export interface LivingBeingSubject {
   uniqueness?: UniquenessProof;
   guardian?: string;
   connectedTo?: Connection[];
+  fan?: FanClaims;
   attributes?: Record<string, string | number | boolean>;
 }
 

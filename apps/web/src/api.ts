@@ -36,6 +36,10 @@ export const api = {
     uniqueness?: UniquenessProof;
     attributes?: Record<string, string | number | boolean>;
   }) => request<OnboardResult>("/api/onboard/being", input),
+  onboardFan: (input: {
+    worldId: { simulate?: boolean; signal?: string };
+    fan: { handle: string; favoriteTeam?: string; displayName?: string };
+  }) => request<OnboardResult>("/api/onboard/fan", input),
   present: (credentialId: string, disclose: string[]) =>
     request<Presentation>("/api/present", { credentialId, disclose }),
   verify: (jwt: string) => request<VerificationResult>("/api/verify", { jwt }),

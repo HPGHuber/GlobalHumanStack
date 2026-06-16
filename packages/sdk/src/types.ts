@@ -31,6 +31,25 @@ export interface Connection {
   id: string;
 }
 
+/**
+ * Fan / supporter claims linked to a FIFA Collect account. This is the body of a
+ * "WorldPass" credential — a FREEDENTITY issued to a unique human football fan.
+ * Only public, low-sensitivity profile data is stored (no payment/PII).
+ */
+export interface FanClaims {
+  /** Public FIFA Collect handle. */
+  fifaCollectHandle: string;
+  /** Deterministic, unique WorldPass serial (one per human per competition). */
+  worldPassId: string;
+  displayName?: string;
+  favoriteTeam?: string;
+  /** Competition / season the WorldPass is scoped to, e.g. "FIFA World Cup 2026". */
+  competition?: string;
+  memberSince?: string;
+  collectiblesCount?: number;
+  tier?: string;
+}
+
 /** The `credentialSubject` of a Living Being Credential. */
 export interface LivingBeingSubject {
   id: string;
@@ -40,6 +59,8 @@ export interface LivingBeingSubject {
   /** Controlling guardian/steward DID (required for animalia/plantae). */
   guardian?: string;
   connectedTo?: Connection[];
+  /** Present when the human also holds a FIFA Collect WorldPass. */
+  fan?: FanClaims;
   /** Free-form, low-sensitivity attributes (selectively disclosable). */
   attributes?: Record<string, string | number | boolean>;
 }

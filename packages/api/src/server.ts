@@ -26,6 +26,12 @@ interface OnboardBeingBody {
   attributes?: Record<string, string | number | boolean>;
 }
 
+interface OnboardFanBody {
+  worldId?: WorldIdProof;
+  fan?: { handle?: string; favoriteTeam?: string; displayName?: string };
+  competition?: string;
+}
+
 interface PresentBody {
   credentialId?: string;
   disclose?: Array<keyof LivingBeingSubject>;
@@ -53,7 +59,8 @@ async function main(): Promise<void> {
     res.json({
       mode: stack.mode(),
       trustAnchorDid: stack.trustAnchorDid,
-      worldId: { appId: stack.config.worldid.appId, action: stack.config.worldid.action }
+      worldId: { appId: stack.config.worldid.appId, action: stack.config.worldid.action },
+      fifa: { competition: stack.config.fifa.competition }
     });
   });
 
@@ -91,6 +98,27 @@ async function main(): Promise<void> {
         guardianDid: body.guardianDid,
         uniqueness: body.uniqueness,
         attributes: body.attributes
+      });
+      res.json(result);
+    })
+  );
+
+  api.post(
+    "/onboard/fan",
+    asyncHandler(async (req, res) => {
+      const body = req.body as OnboardFanBody;
+      if (!body.fan?.handle) {
+        res.status(400).json({ error: "fan.handle is required" });
+        return;
+      }
+      const result = await stack.onboardFan({
+        worldId: body.worldId ?? { simulate: true },
+        fan: {
+          handle: body.fan.handle,
+          favoriteTeam: body.fan.favoriteTeam,
+          displayName: body.fan.displayName
+        },
+        competition: body.competition
       });
       res.json(result);
     })
@@ -151,7 +179,9 @@ async function main(): Promise<void> {
   app.listen(port, () => {
     const mode = stack.mode();
     console.log(`AYA.ONE Identity Stack API listening on http://localhost:${port}`);
-    console.log(`  mode: iota=${mode.iota} walt.id=${mode.waltid} worldid=${mode.worldid}`);
+    console.log(
+      `  mode: iota=${mode.iota} walt.id=${mode.waltid} worldid=${mode.worldid} fifa=${mode.fifa}`
+    );
     console.log(`  trust anchor: ${stack.trustAnchorDid}`);
   });
 }

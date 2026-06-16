@@ -8,6 +8,7 @@ const DISCLOSE_FIELDS = [
   "uniqueness",
   "guardian",
   "connectedTo",
+  "fan",
   "attributes"
 ] as const;
 
@@ -36,6 +37,9 @@ export function App(): JSX.Element {
   const [commonName, setCommonName] = useState("English oak");
   const [uniquenessRef, setUniquenessRef] = useState("sha256:geo-genetic-fingerprint");
   const [guardianDid, setGuardianDid] = useState("");
+
+  const [fanHandle, setFanHandle] = useState("messi_fan_10");
+  const [favoriteTeam, setFavoriteTeam] = useState("Argentina");
 
   const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [verification, setVerification] = useState<VerificationResult | null>(null);
@@ -97,6 +101,16 @@ export function App(): JSX.Element {
       await refresh();
     });
 
+  const onboardFan = () =>
+    run(async () => {
+      const result = await api.onboardFan({
+        worldId: { simulate: true, signal: `worldpass:${fanHandle || Date.now()}` },
+        fan: { handle: fanHandle, favoriteTeam, displayName: fanHandle }
+      });
+      setJwts((prev) => ({ ...prev, [result.credential.id]: result.credential.jwt }));
+      await refresh();
+    });
+
   const verify = (credentialId: string) =>
     run(async () => {
       const jwt = jwts[credentialId];
@@ -130,6 +144,7 @@ export function App(): JSX.Element {
             <Mode label="IOTA Identity" value={config.mode.iota} />
             <Mode label="walt.id" value={config.mode.waltid} />
             <Mode label="World ID" value={config.mode.worldid} />
+            <Mode label="FIFA Collect" value={config.mode.fifa} />
             <span className="anchor" title={config.trustAnchorDid}>
               Trust anchor: {short(config.trustAnchorDid)}
             </span>
@@ -200,6 +215,29 @@ export function App(): JSX.Element {
             Register being
           </button>
         </section>
+
+        <section className="card worldpass">
+          <h2>3. Claim a WorldPass — a FREEDENTITY for every Fan</h2>
+          <p className="hint">
+            Every unique human football fan proves personhood with World ID and links their{" "}
+            <a href="https://collect.fifa.com" target="_blank" rel="noreferrer">
+              FIFA Collect
+            </a>{" "}
+            profile to mint a WorldPass credential
+            {config?.fifa?.competition ? ` · ${config.fifa.competition}` : ""}.
+          </p>
+          <label>
+            FIFA Collect handle
+            <input value={fanHandle} onChange={(e) => setFanHandle(e.target.value)} />
+          </label>
+          <label>
+            Favourite team
+            <input value={favoriteTeam} onChange={(e) => setFavoriteTeam(e.target.value)} />
+          </label>
+          <button disabled={busy || !fanHandle} onClick={onboardFan}>
+            ⚽ Claim your WorldPass
+          </button>
+        </section>
       </div>
 
       <section className="card">
@@ -224,7 +262,19 @@ export function App(): JSX.Element {
             {registry.map((r) => (
               <tr key={r.did}>
                 <td>
-                  {KINGDOM_ICON[r.kingdom]} {r.subject.taxon?.commonName ?? r.kingdom}
+                  {r.subject.fan ? "⚽" : KINGDOM_ICON[r.kingdom]}{" "}
+                  {r.subject.fan
+                    ? `WorldPass · ${r.subject.fan.favoriteTeam ?? r.subject.fan.fifaCollectHandle}`
+                    : (r.subject.taxon?.commonName ?? r.kingdom)}
+                  {r.subject.fan && (
+                    <div className="subtle">
+                      {r.subject.fan.worldPassId}
+                      {typeof r.subject.fan.collectiblesCount === "number"
+                        ? ` · ${r.subject.fan.collectiblesCount} collectibles`
+                        : ""}
+                      {r.subject.fan.tier ? ` · ${r.subject.fan.tier}` : ""}
+                    </div>
+                  )}
                 </td>
                 <td title={r.did}>
                   <code>{short(r.did)}</code>

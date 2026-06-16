@@ -14,7 +14,7 @@ describe("AYA Identity Stack", () => {
   });
 
   it("runs entirely in mock mode with an empty environment", () => {
-    expect(stack.mode()).toEqual({ iota: "mock", waltid: "mock", worldid: "mock" });
+    expect(stack.mode()).toEqual({ iota: "mock", waltid: "mock", worldid: "mock", fifa: "mock" });
     expect(stack.trustAnchorDid).toMatch(/^did:iota:local:0x[0-9a-f]{64}$/);
   });
 
@@ -104,6 +104,47 @@ describe("AYA Identity Stack", () => {
     expect(result.valid).toBe(false);
     expect(result.checks.notRevoked).toBe(false);
     expect(result.errors).toContain("Credential has been revoked");
+  });
+
+  it("issues a WorldPass credential for a unique human football fan", async () => {
+    const { record, credential } = await stack.onboardFan({
+      worldId: { simulate: true, signal: "worldpass:messi_fan_10" },
+      fan: { handle: "messi_fan_10", favoriteTeam: "Argentina" }
+    });
+
+    expect(record.kingdom).toBe("human");
+    expect(credential.payload.type).toContain("WorldPassCredential");
+    const fan = credential.payload.credentialSubject.fan;
+    expect(fan?.fifaCollectHandle).toBe("messi_fan_10");
+    expect(fan?.favoriteTeam).toBe("Argentina");
+    expect(fan?.worldPassId).toMatch(/^WP-[0-9A-F]{12}$/);
+    expect(fan?.competition).toBe("FIFA World Cup 2026");
+    expect(typeof fan?.collectiblesCount).toBe("number");
+
+    expect((await stack.verify(credential.jwt)).valid).toBe(true);
+  });
+
+  it("enforces one-human-one-WorldPass per competition", async () => {
+    await stack.onboardFan({
+      worldId: { simulate: true, signal: "worldpass:lena" },
+      fan: { handle: "lena" }
+    });
+    await expect(
+      stack.onboardFan({
+        worldId: { simulate: true, signal: "worldpass:lena" },
+        fan: { handle: "lena" }
+      })
+    ).rejects.toThrow(/already holds a WorldPass/);
+  });
+
+  it("discloses only the fan claim in a WorldPass presentation", async () => {
+    const { credential } = await stack.onboardFan({
+      worldId: { simulate: true, signal: "worldpass:omar" },
+      fan: { handle: "omar", favoriteTeam: "Morocco" }
+    });
+    const presentation = stack.present(credential.id, ["fan"]);
+    expect(presentation.disclosed.fan?.favoriteTeam).toBe("Morocco");
+    expect(presentation.disclosed.uniqueness).toBeUndefined();
   });
 
   it("rejects a credential from an untrusted issuer", async () => {
