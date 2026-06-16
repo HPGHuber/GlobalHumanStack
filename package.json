@@ -1,1 +1,40 @@
-{"name": "global-human-stack", "version": "1.0.0", "description": "Decentralized identity and economy layer on IOTA MoveVM, Worldcoin, and Gradido", "private": true, "workspaces": ["packages/contracts", "packages/sdk", "packages/api"], "scripts": {"build": "turbo run build", "dev": "turbo run dev --parallel", "test": "turbo run test"}, "devDependencies": {"turbo": "^1.10.0", "typescript": "^5.0.0"}}
+{
+  "name": "global-human-stack",
+  "version": "1.0.0",
+  "description": "AYA.ONE — a self-sovereign Identity Stack for every Human, Plant and Animal, built on IOTA Identity, walt.id and World ID.",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "workspaces": [
+    "packages/contracts",
+    "packages/sdk",
+    "packages/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "build": "tsc -b && npm run build -w apps/web",
+    "typecheck": "tsc -b && npm run typecheck -w apps/web",
+    "test": "npm run test -w packages/sdk",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "start": "node packages/api/dist/server.js",
+    "dev": "concurrently -n sdk,api,web -c blue,green,magenta \"npm:dev:sdk\" \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:sdk": "tsc -b -w packages/sdk --preserveWatchOutput",
+    "dev:api": "tsx watch packages/api/src/server.ts",
+    "dev:web": "vite -c apps/web/vite.config.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/node": "^22.7.0",
+    "concurrently": "^9.0.1",
+    "eslint": "^9.13.0",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.10.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
