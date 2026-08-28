@@ -1,0 +1,11 @@
+{
+  "name": "@global-human-stack/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SDK workspace for GlobalHumanStack",
+  "scripts": {
+    "build": "node -e \"console.log('sdk build placeholder')\"",
+    "dev": "node -e \"console.log('sdk dev placeholder')\"",
+    "test": "node -e \"console.log('sdk tests placeholder')\""
+  }
+}

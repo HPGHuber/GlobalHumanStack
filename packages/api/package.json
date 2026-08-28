@@ -1,0 +1,11 @@
+{
+  "name": "@global-human-stack/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API workspace for GlobalHumanStack",
+  "scripts": {
+    "build": "node -e \"console.log('api build placeholder')\"",
+    "dev": "node -e \"console.log('api dev placeholder')\"",
+    "test": "node -e \"console.log('api tests placeholder')\""
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@global-human-stack/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart-contract workspace for GlobalHumanStack",
+  "scripts": {
+    "build": "node -e \"console.log('contracts build placeholder')\"",
+    "dev": "node -e \"console.log('contracts dev placeholder')\"",
+    "test": "node -e \"console.log('contracts tests placeholder')\""
+  }
+}
