@@ -89,3 +89,17 @@ This is a **prototype**: DIDs use the real `did:iota` format and credentials are
 EdDSA-signed W3C VC-JWTs, but DID anchoring, the walt.id OID4VC flow, and live World ID
 verification are wired behind adapters that activate when their env vars are set. See the
 roadmap in [`docs/architecture.md`](docs/architecture.md).
+
+
+## ONCE — Open Global Communication
+
+This repository also hosts the initial public ONCE protocol and HeavenKey entry design:
+
+- [ONCE project overview](projects/once/README.md)
+- [Protocol scope](projects/once/SPEC.md)
+- [System architecture](projects/once/ARCHITECTURE.md)
+- [HeavenKey entry model](projects/once/HEAVENKEY.md)
+- [Security model](projects/once/SECURITY.md)
+- [Roadmap](projects/once/ROADMAP.md)
+
+ONCE is currently a public architecture/specification draft, not a production messaging service. Contributions and security review are welcome.
