@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://unifa id.example/spec/v0.1/message.schema.json",
+  "$id": "https://unifaid.org/spec/v0.1/message.schema.json",
   "title": "UNIFAID Message Event v0.1 (draft)",
   "description": "Illustrative, unstable schema for a provider-neutral AI conversation event. Replace the provisional $id before publication as a stable specification.",
   "type": "object",
   "additionalProperties": true,
   "required": ["protocol", "event_id", "conversation_id", "created_at", "sender", "kind", "content"],
   "properties": {
-    "protocol": { "const": "unifa id/0.1" },
+    "protocol": { "const": "unifaid/0.1" },
     "event_id": { "type": "string", "minLength": 1 },
     "conversation_id": { "type": "string", "minLength": 1 },
     "created_at": { "type": "string", "format": "date-time" },
