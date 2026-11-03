@@ -36,6 +36,7 @@ A zero-build local browser demo is available in [`demo/`](demo/README.md). It in
 - [HeavenKey entry and identity model](HEAVENKEY.md)
 - [Security model and threat assumptions](SECURITY.md)
 - [Roadmap](ROADMAP.md)
+- [EU & UN funding and recognition strategy](FUNDING_AND_RECOGNITION.md)
 - [Initial message envelope schema](schemas/message-envelope.schema.json)
 
 ## Proposed architecture at a glance
