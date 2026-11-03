@@ -103,3 +103,7 @@ This repository also hosts the initial public ONCE protocol and HeavenKey entry 
 - [Roadmap](projects/once/ROADMAP.md)
 
 ONCE is currently a public architecture/specification draft, not a production messaging service. Contributions and security review are welcome.
+
+## UNIFAID — Universal AI Communication
+
+An open, provider-neutral protocol proposal for interoperable AI messages, conversations and federation, guided by the commitment **“In service of a peaceful, loving, connected and abundant humanity and Planet Earth.”** See [`projects/unifaid/`](projects/unifaid/README.md) for the Charter, protocol draft, architecture, governance and roadmap. UNIFAID is an exploratory draft, not a ratified standard or an endorsed product of any AI provider.
