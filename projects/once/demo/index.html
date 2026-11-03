@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102d27">
+  <meta name="description" content="ONCE — open global communication. HeavenKey entry and local encrypted messaging prototype.">
+  <title>ONCE — Open Global Communication</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="brand-mark">∞</span><span>ONCE<small>OPEN GLOBAL COMMUNICATION</small></span></a>
+    <span class="status"><i></i> LOCAL PROTOTYPE</span>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">ONE PROTOCOL · MANY APPS · ONE CONNECTED WORLD</div>
+      <h1>Connection<br><em>belongs to everyone.</em></h1>
+      <p>One open network for messages, people and communities. Start with HeavenKey — your calm, passkey-first entry to ONCE.</p>
+      <div class="hero-note">✦ Free to use. Free to build. Free to connect.</div>
+    </section>
+
+    <section class="workspace">
+      <aside class="sidebar">
+        <div class="section-label">YOUR ONCE SPACE</div>
+        <div class="identity-card">
+          <div class="avatar" id="avatar">H</div>
+          <div class="identity-copy"><strong id="identity-name">Guest</strong><span id="identity-id">@guest:once</span></div>
+          <span class="lock" title="Local demo">◇</span>
+        </div>
+        <button class="primary full" id="heavenkey">✧ Enter with HeavenKey</button>
+        <p class="micro" id="key-status">Create a local demo identity to begin.</p>
+        <div class="section-label list-heading">MESSAGES <button class="icon-button" id="new-chat" aria-label="New chat">＋</button></div>
+        <button class="conversation active" data-room="world"><span class="room-avatar">◎</span><span><b>Welcome to ONCE</b><small>Your first conversation</small></span><span class="unread">1</span></button>
+        <button class="conversation" data-room="future"><span class="room-avatar gold">✦</span><span><b>Future Network</b><small>Community preview</small></span></button>
+        <div class="sidebar-footer">Your identity. Your choice.<br>Open standards. No lock-in.</div>
+      </aside>
+
+      <section class="chat">
+        <div class="chat-head"><div><div class="section-label">PRIVATE SPACE · DEMO</div><h2 id="room-title">Welcome to ONCE</h2></div><span class="secure-pill">◇ Local encryption</span></div>
+        <div class="messages" id="messages" aria-live="polite">
+          <div class="day-divider">YOUR ONCE JOURNEY STARTS HERE</div>
+          <article class="bubble theirs"><span class="sender">ONCE GUIDE</span><p>Welcome. This is a local-first prototype of the ONCE experience.</p><time>Just now</time></article>
+          <article class="bubble theirs"><span class="sender">ONCE GUIDE</span><p>Create your HeavenKey demo identity, then send your first encrypted local message. Nothing is sent to a server.</p><time>Just now</time></article>
+        </div>
+        <form class="composer" id="composer"><button type="button" class="attach" title="Demo attachment placeholder">＋</button><label class="sr-only" for="message-input">Write a message</label><input id="message-input" placeholder="Write a message…" autocomplete="off" maxlength="2000"><button class="send" type="submit" aria-label="Send message">↑</button></form>
+        <div class="composer-foot">Prototype messages are encrypted in this browser only. Not delivered to another person.</div>
+      </section>
+
+      <aside class="right-rail">
+        <div class="section-label">THE OPEN NETWORK</div>
+        <div class="network-card"><div class="network-orbit">◎</div><h3>One world.<br>Many ways to connect.</h3><p>ONCE is designed to connect independent apps through open standards — without forcing everyone into one app.</p></div>
+        <div class="section-label">BUILT ON OPEN IDEAS</div>
+        <div class="standard"><b>HeavenKey</b><span>Passkey-first entry</span></div>
+        <div class="standard"><b>End-to-end encryption</b><span>Private by design</span></div>
+        <div class="standard"><b>Open federation</b><span>Choose your provider</span></div>
+        <div class="standard"><b>Interoperability</b><span>Apps can connect</span></div>
+        <div class="notice"><b>Prototype, not production</b><p>No server-side passkey verification, multi-device sync, federation or external messenger bridges are active yet.</p></div>
+      </aside>
+    </section>
+    <footer>ONCE · OPEN GLOBAL COMMUNICATION <span>Built for people, not platforms.</span></footer>
+  </main>
+  <dialog id="identity-dialog">
+    <form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form>
+    <div class="dialog-mark">∞</div><div class="eyebrow">HEAVENKEY · YOUR ENTRY</div><h2>Welcome to ONCE.</h2>
+    <p>Create a local demo identity. Your browser will request a passkey if this device supports WebAuthn.</p>
+    <label for="display-name">Your display name</label><input id="display-name" maxlength="40" placeholder="e.g. Alex">
+    <label for="handle">Your ONCE handle</label><div class="handle-field"><span>@</span><input id="handle" maxlength="24" placeholder="alex"></div>
+    <button class="primary full" id="create-identity" type="button">Create my HeavenKey demo</button>
+    <p class="micro" id="dialog-status">Demo only: the passkey ceremony is not verified by a relying-party server.</p>
+  </dialog>
+  <dialog id="new-chat-dialog">
+    <form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form>
+    <div class="eyebrow">NEW CONVERSATION</div><h2>Start with a name</h2><p>This creates a local demo room only.</p>
+    <label for="room-name">Conversation name</label><input id="room-name" maxlength="40" placeholder="A friend or community">
+    <button class="primary full" id="create-room" type="button">Create local conversation</button>
+  </dialog>
+  <script src="./app.js" defer></script>
+</body>
+</html>
