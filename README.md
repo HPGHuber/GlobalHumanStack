@@ -107,3 +107,8 @@ ONCE is currently a public architecture/specification draft, not a production me
 ## UNIFAID — Universal AI Communication
 
 An open, provider-neutral protocol proposal for interoperable AI messages, conversations and federation, guided by the commitment **“In service of a peaceful, loving, connected and abundant humanity and Planet Earth.”** See [`projects/unifaid/`](projects/unifaid/README.md) for the Charter, protocol draft, architecture, governance and roadmap. UNIFAID is an exploratory draft, not a ratified standard or an endorsed product of any AI provider.
+
+
+### UNIFAID working demonstrator
+
+The UNIFAID project now includes an experimental local multi-provider conversation prototype and Web Summit founder materials. Start at [the UNIFAID project page](projects/unifaid/README.md).
