@@ -25,6 +25,10 @@ This repository currently defines goals, boundaries, security requirements, an i
 7. **Accessible and global.** Internationalisation, low-bandwidth support, assistive technology and open documentation are first-class.
 8. **Open governance.** Protocol decisions are public, reviewable and independent of any one app vendor.
 
+## Try the browser prototype
+
+A zero-build local browser demo is available in [`demo/`](demo/README.md). It includes the ONCE interface, HeavenKey demo onboarding, and browser-local AES-GCM encrypted message storage. It is **not** a network messenger: WebAuthn is not server-verified, messages stay in this browser, and no federation or external bridges are active. Run it on localhost or HTTPS; see the [demo instructions](demo/README.md).
+
 ## Project documents
 
 - [Protocol and scope](SPEC.md)
