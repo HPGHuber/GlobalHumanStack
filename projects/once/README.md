@@ -68,4 +68,4 @@ Start with issues and design discussions. Security-sensitive changes require thr
 
 ## License
 
-The protocol and documentation are intended to be published under **Apache-2.0**. Implementations may use compatible open-source dependencies under their own licenses. This project is an initiative and does not claim endorsement by Matrix, IETF, W3C, or any messaging provider.
+The parent repository currently declares **GPL-3.0**. The long-term licensing and contribution policy for the ONCE protocol specification should be reviewed and explicitly settled before external implementations rely on it. Third-party dependencies retain their own licenses. This project does not claim endorsement by Matrix, IETF, W3C, or any messaging provider.
