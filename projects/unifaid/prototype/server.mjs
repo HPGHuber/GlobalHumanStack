@@ -13,7 +13,7 @@ const envKeys = {openai:"OPENAI_API_KEY",anthropic:"ANTHROPIC_API_KEY",gemini:"G
 const envModels = {openai:"OPENAI_MODEL",anthropic:"ANTHROPIC_MODEL",gemini:"GEMINI_MODEL",mistral:"MISTRAL_MODEL"};
 function json(res,status,body){res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});res.end(JSON.stringify(body));}
 async function readBody(req){let raw="";for await(const chunk of req){raw+=chunk;if(raw.length>MAX_BODY)throw new Error("Request too large");}return JSON.parse(raw||"{}");}
-function config(){return {protocol:"unifaid/0.1",mode:process.env.UNIFAID_MODE||"mock",providers:providers.map(id=>({id,configured:Boolean(process.env[envKeys[id]]),model:process.env[envModels[id]]||null}))};}
+function config(){const configured=providers.filter(id=>Boolean(process.env[envKeys[id]])).length;const mode=configured===0?"mock":configured===providers.length?"live":"hybrid";return {protocol:"unifaid/0.1",mode,providers:providers.map(id=>({id,configured:Boolean(process.env[envKeys[id]]),model:process.env[envModels[id]]||null}))};}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function mockReply(provider,messages){await sleep(300+Math.random()*400);const last=messages.filter(m=>m.role==="user").at(-1)?.content||"";return {provider,model:"unifaid-demo-mock",text:"[DEMO RESPONSE — "+provider.toUpperCase()+" MOCK]\n\nI received your message: “"+last.slice(0,700)+"”\n\nThis is simulated. Configure this provider's official API key to receive a live model response."};}
 function historyFor(messages){return messages.filter(m=>["user","assistant","system"].includes(m.role)).map(m=>({role:m.role,content:m.content}));}
