@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://unifa id.example/spec/v0.1/message.schema.json",
+  "title": "UNIFAID Message Event v0.1 (draft)",
+  "description": "Illustrative, unstable schema for a provider-neutral AI conversation event. Replace the provisional $id before publication as a stable specification.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["protocol", "event_id", "conversation_id", "created_at", "sender", "kind", "content"],
+  "properties": {
+    "protocol": { "const": "unifa id/0.1" },
+    "event_id": { "type": "string", "minLength": 1 },
+    "conversation_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "sender": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "enum": ["human", "assistant", "agent", "tool", "system"] },
+        "id": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string" },
+        "model": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "recipient": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["human", "assistant", "agent", "tool", "provider", "room"] },
+        "id": { "type": "string" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "kind": { "enum": ["message", "tool_call", "tool_result", "membership", "policy", "redaction"] },
+    "reply_to": { "type": ["string", "null"] },
+    "content": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "enum": ["text", "image", "audio", "video", "file", "json", "tool_call", "tool_result"] },
+          "text": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "mime_type": { "type": "string" },
+          "data": {},
+          "name": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "share_with_participants": { "type": "boolean" },
+        "retain_context": { "type": "boolean" },
+        "retention_hint": { "type": "string" },
+        "consent_reference": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "metadata": { "type": "object", "additionalProperties": true }
+  }
+}
