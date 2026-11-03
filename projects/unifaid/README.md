@@ -79,3 +79,14 @@ The specification and documentation are intended to be published under **CC BY 4
 
 ---
 *UNIFAID — One humanity. Many intelligences. In service of life.*
+
+
+## Working prototype
+
+A first single-user demonstrator is now available in [prototype/](prototype/README.md). It supports provider selection, explicit data-sharing consent, parallel requests, provider/model attribution, mock mode and JSON export. It is designed to run locally with Node.js 20+ and no npm dependencies.
+
+- [Run the prototype](prototype/README.md)
+- [Web Summit founder speech](WEBSUMMIT-SPEECH.md)
+- [Web Summit speaker brief and demo plan](WEBSUMMIT-BRIEF.md)
+
+The demonstrator is an early development build, not a hosted or production service. Live API use requires the user's own provider credentials. Federation, multi-user rooms and production security remain future milestones.
