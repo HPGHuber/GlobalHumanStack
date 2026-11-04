@@ -34,6 +34,7 @@ packages/sdk        Identity Orchestrator: DID, credentials, World ID, walt.id a
 packages/api        Express HTTP API (onboard / present / verify / revoke)
 apps/web            Minimal React UI demonstrating the full loop
 docs/architecture.md  Design document
+projects/neco-bank  Open-source NECO.BANK architecture and Swan adapter scaffold
 ```
 
 ## Mock-by-default
@@ -90,6 +91,23 @@ EdDSA-signed W3C VC-JWTs, but DID anchoring, the walt.id OID4VC flow, and live W
 verification are wired behind adapters that activate when their env vars are set. See the
 roadmap in [`docs/architecture.md`](docs/architecture.md).
 
+## NECO.BANK — Open-source finance for humanity
+
+NECO.BANK is the financial-services project within this stack. It is designed for the WODA
+Kernel and combines a regulated-provider adapter boundary (Swan), verifiable identity
+(walt.id / IOTA), privacy-preserving trust proofs and a future NECO community-grants engine.
+
+- [NECO.BANK project overview](projects/neco-bank/README.md)
+- [System architecture](projects/neco-bank/ARCHITECTURE.md)
+- [Swan integration and regulatory boundary](projects/neco-bank/SWAN_INTEGRATION.md)
+- [NECO basic-income programme design](projects/neco-bank/NECO_BASIC_INCOME.md)
+- [Security baseline](projects/neco-bank/SECURITY.md)
+- [Roadmap](projects/neco-bank/ROADMAP.md)
+- [Draft OpenAPI](projects/neco-bank/openapi.yaml)
+
+NECO.BANK is currently a prototype/specification and server-side transport scaffold. It is
+not a bank or live payment service, and no Swan partnership, WODA compatibility, funding,
+or regulatory approval is implied.
 
 ## ONCE — Open Global Communication
 
