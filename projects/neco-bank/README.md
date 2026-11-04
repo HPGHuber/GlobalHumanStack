@@ -49,7 +49,14 @@ Official docs:
 
 ## Local development
 
-The initial project files are specifications and a transport scaffold. They are not yet wired into the root monorepo build. Use Node.js 20+ and TypeScript. To type-check the standalone transport file, integrate it into the parent TypeScript project or compile it in a dedicated package once the WODA SDK contract is available.
+Requires Node.js 20+ and npm. From this directory:
+
+```bash
+npm install
+npm run typecheck
+```
+
+The package type-checks the transport scaffold only. It does not connect to Swan or implement a complete banking service.
 
 ## Regulatory positioning
 
