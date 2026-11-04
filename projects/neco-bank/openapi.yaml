@@ -1,0 +1,84 @@
+openapi: 3.1.0
+info:
+  title: NECO.BANK Programme API (Draft)
+  version: 0.1.0
+  description: >
+    Draft application API for programme information and simulated grant proposals.
+    This specification does not expose Swan credentials or execute real payments.
+servers:
+  - url: http://localhost:8787
+paths:
+  /health:
+    get:
+      summary: Service health
+      responses:
+        "200":
+          description: Service is available
+  /v1/programmes:
+    get:
+      summary: List public NECO programmes
+      responses:
+        "200":
+          description: Programme list
+  /v1/grants/estimate:
+    post:
+      summary: Calculate a non-binding grant estimate
+      description: >
+        Returns an estimate only. It does not create an entitlement, mint NECO,
+        reserve funds, or initiate a payment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [programmeId, householdSize]
+              properties:
+                programmeId:
+                  type: string
+                householdSize:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+      responses:
+        "200":
+          description: Non-binding estimate
+        "400":
+          description: Invalid request
+  /v1/grants:
+    post:
+      summary: Submit a grant application for review
+      description: >
+        Creates an application record for human review. No automatic approval
+        or payment execution is performed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [programmeId]
+              properties:
+                programmeId:
+                  type: string
+                credentialReferences:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "202":
+          description: Application received for review
+        "400":
+          description: Invalid request
+        "401":
+          description: Authentication required
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
