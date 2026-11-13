@@ -25,3 +25,23 @@ The authorization request asks for `openid` and Orb assurance via `acr_values=ht
 - The foyer Orb is a proposed physical setup only. Orb hardware, operator, placement, network/power, safety, accessibility, privacy signage and venue approval must be agreed with World and Messe München.
 - World ID proves a unique human/credential class, not civil identity, name, nationality or age. The app does not collect or store biometric data.
 - This is an independent showcase concept, not an announced partnership or an operational Messe deployment.
+
+## ORB ENERGY ROUTER — TechNovator × FUNKSTROM
+
+The showcase now presents the Orb as a proposed modular energy node:
+- Inputs: grid power, optional PV and optional battery storage
+- Power core: AC/DC or DC/DC conversion, protected DC bus, metering, thermal monitoring and load management
+- Outputs: wired USB-C/DC and a wireless transmitter with a compatible receiver
+- Network: node status and energy telemetry exposed through an authenticated device API; no real-time telemetry is claimed in the static showcase
+- Identity: World ID can authenticate a human session; device authorization and energy permissions are separate credentials, not inferred from proof-of-humanity
+
+TechNovator's wireless-power technology is a candidate transmitter/receiver subsystem. Vendor performance claims (including up to 95% efficiency) are not treated as independently verified. The exact FUNKSTROM implementation, receiver compatibility, power level, range, efficiency and safety envelope require joint engineering validation. The Orb is an energy router, not an energy source; it routes energy from grid/PV/storage.
+
+### Required engineering gates
+1. Bench-test transmitter/receiver compatibility and measure end-to-end wall-to-load efficiency at defined distance, alignment, orientation and simultaneous receiver count.
+2. Measure thermal rise, EMC emissions/immunity, human exposure, foreign-object response, fault behavior and emergency shutdown.
+3. Define certified power envelopes and receiver authentication/handshake; wireless output remains disabled by default until the approved receiver is detected.
+4. Complete electrical safety, CE/RED/EMC and applicable product compliance assessments with competent test labs before public operation.
+5. Integrate energy metering, device authorization, consent, audit logs and role-based control via WODA:ONCE APIs.
+
+The electronica 2026 fair ran November 10–13, 2026 and closed at 15:00 on November 13. The Orb Energy Router is therefore a digital showcase / follow-on demonstrator concept, not a claim that hardware was installed or operated at the 2026 fair.
